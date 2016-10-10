@@ -4,7 +4,7 @@ Helps keep FPV drones off the ground.
 Uses a lidarLiteV3 in conjunction with pitch angle from LightweightTeLemetry attitude packets from a Naze32 flightcontroller to calculate the height of a drone.
 Reports the height via a HC-12 433Mhz serial bridge, to a user-worn tactile feedback solution that helps keep the drone off the ground.
 
-![Concept](anglesSketch.svg "Concept")
+![Concept](https://rawgit.com/Robotto/groundGuard/master/anglesSketch.svg "Concept")
 
 Both serial connections run at 115200 Baud, and the I2C connection with the lidarLite runs at 400Khz, so this should be pretty damn fast.
 
