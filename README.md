@@ -6,8 +6,9 @@ Reports the height via a HC-12 433Mhz serial bridge, to a user-worn tactile feed
 
 ![Concept](https://rawgit.com/Robotto/groundGuard/master/anglesSketch.svg "Concept")
 
+![Connections](https://rawgit.com/Robotto/groundGuard/master/HardwareSetup.png "Connections")
+
 Both serial connections run at 115200 Baud, and the I2C connection with the lidarLite runs at 400Khz, so this should be pretty damn fast.
+Setup the HC-12 to FU1 and 115200 baud (AT+FU1, AT+B115200) by pulling the "SET" pin low and issuing AT commands.
 
 The lidarLiteV3 distanceFast() function is from [here](https://github.com/garmin/LIDARLite_v3_Arduino_Library/)
-
-Setup the HC-12 to FU1 and 115200 (AT+FU1, AT+B115200) by pulling the "SET" pin low and issuing AT commands.
