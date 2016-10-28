@@ -46,7 +46,8 @@ void setup() {
 
 void loop() {
 
-  distance = distanceFast(true); // Take a measurement with receiver bias correction and print to serial terminal
+  //distance = distanceFast(true); // Take a measurement with receiver bias correction and print to serial terminal
+  distance = 100; //testdata
    // Take 99 measurements without receiver bias correction and print to serial terminal
   //for(int i = 0; i < 99; i++) Serial1.println(distanceFast(false));
   
@@ -167,6 +168,6 @@ int distanceFast(bool biasCorrection)
   distance <<= 8;
   distance |= Wire.read();
 
-  // Return the measured distance
+  // Return the measured distance (in cm)
   return distance;
 }
