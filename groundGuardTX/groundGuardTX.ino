@@ -22,17 +22,18 @@ unsigned long attitudeFrameCounter=0;
 
 
 void setup() {
+  pinMode(BUILTIN_LED, OUTPUT);
   //using the same UART for RXing from flight controller and TXing to HC-12:
 	Serial.begin(115200); //RX: GPIO3, TX: GPIO1
-  Serial.swap(); //RX:Pin D7/GPIO13 TX:Pin D8/GPIO15
+  //Serial.swap(); //RX:Pin D7/GPIO13 TX:Pin D8/GPIO15
 
-
+/*
 	Lidar.begin(0, true); // Set configuration to default and I2C to 400 kHz
 
 	Lidar.write(0x02, 0x0d);       //Maximum acquisition count of 0x0d. (default is 0x80) (limits effective range to about half of max)
 	Lidar.write(0x04, 0b00000100); //Use non-default reference acquisition count
 	Lidar.write(0x12, 0x03);       //Reference acquisition count of 3 (default is 5)
-
+*/
 	delay(500);
 
 	Serial.println("groundGuard online.");
@@ -64,6 +65,8 @@ if(Serial.available()){
 	fifo2 = Serial.read();
 
 	if(fifo0=='$' && fifo1=='T' && fifo2=='A') {//the next 6 rx bytes are the attitude frame
+
+  digitalWrite(BUILTIN_LED, !digitalRead(BUILTIN_LED));
 
 	//0,1: Pitch
 	//2,3: Roll

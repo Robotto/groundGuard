@@ -15,6 +15,6 @@ void loop() {
 
 	//height = Serial.parseFloat();
 
-	if(Serial.available()) Serial.write(Serial.read); //TEST CODE
+	if(Serial.available()) Serial.write(Serial.read()); //TEST CODE
 
 }
