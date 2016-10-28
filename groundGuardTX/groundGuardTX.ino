@@ -1,11 +1,7 @@
-//groundGuard.ino - By Mark Moore - October 2016
+//groundGuardTX.ino - By Mark Moore - October 2016
 
 #define packetLength 16
 const float pi = 3.14159;
-
-//HC-12:
-const byte SSrxPin = D3;
-const byte SStxPin = D0; //not used..
 
 //lidar:
 #include <Wire.h>
@@ -16,8 +12,6 @@ LIDARLite Lidar;
 
 
 //FC:
-#include <SoftwareSerial.h>
-SoftwareSerial flightController (SSrxPin, SStxPin, false, 256); //rx, tx, inverted_logic, buffer_size
 byte fifo0=0, fifo1=0, fifo2=0;
 
 int16_t pitchAngle/*, rollAngle, headingAngle*/;
@@ -28,8 +22,10 @@ unsigned long attitudeFrameCounter=0;
 
 
 void setup() {
-	Serial1.begin(115200); //HC-12
-	flightController.begin(115200);
+  //using the same UART for RXing from flight controller and TXing to HC-12:
+	Serial.begin(115200); //RX: GPIO3, TX: GPIO1
+  Serial.swap(); //RX:Pin D7/GPIO13 TX:Pin D8/GPIO15
+
 
 	Lidar.begin(0, true); // Set configuration to default and I2C to 400 kHz
 
@@ -39,9 +35,9 @@ void setup() {
 
 	delay(500);
 
-	Serial1.println("groundGuard online.");
-	Serial1.println("Hello basestation my old friend,");
-	Serial1.println("I've come online to talk to you again.");
+	Serial.println("groundGuard online.");
+	Serial.println("Hello basestation my old friend,");
+	Serial.println("I've come online to talk to you again.");
 }
 
 void loop() {
@@ -57,15 +53,15 @@ void loop() {
   	pitchRadians = (float)pitchAngle*pi/180;
   	float height = distance*cos(pitchRadians);
   	
-  	if(Serial1.availableForWrite()>=packetLength) Serial1.println(height);  //Transmit if there is room in the serial TX buffer  	
+  	if(Serial.availableForWrite()>=packetLength) Serial.print(height);  //Transmit if there is room in the serial TX buffer  	
   }
 
 
-if(flightController.available()){
+if(Serial.available()){
 	//3 byte fifo buffer:
 	fifo0 = fifo1;
 	fifo1 = fifo2;
-	fifo2 = flightController.read();
+	fifo2 = Serial.read();
 
 	if(fifo0=='$' && fifo1=='T' && fifo2=='A') {//the next 6 rx bytes are the attitude frame
 
@@ -76,9 +72,9 @@ if(flightController.available()){
 	//recieve and 'decode' the first 2 bytes only, into the pitch uint16_t with little endianness:
 		for(int i = 0; i<2 ;i++) {
 
-			while(!flightController.available()); //wait for byte
+			while(!Serial.available()); //wait for byte
 
-			fcRX=flightController.read();
+			fcRX=Serial.read();
 
 			switch (i) {
 		    	case 0: //first pitch byte (binary: xxxx xxxx)
