@@ -1,4 +1,5 @@
 //groundGuardTX.ino - By Mark Moore - October 2016
+#include "ESP8266WiFi.h" //ironically, this is included to allow for disabling wifi..
 
 #define packetLength 16
 const float pi = 3.14159;
@@ -6,34 +7,42 @@ const float pi = 3.14159;
 //lidar:
 #include <Wire.h>
 #include <LIDARLite.h>
+#include <SoftwareSerial.h>
+
 int distance=0;
 int lastDistance=0;
-LIDARLite Lidar;	
+LIDARLite Lidar;  
 
 
 //FC:
 byte fifo0=0, fifo1=0, fifo2=0;
+const byte rxPin = D5;
+const byte txPin = D0; //not used..
+SoftwareSerial flightController (rxPin, txPin);
+byte fcRX;
+
 
 int16_t pitchAngle/*, rollAngle, headingAngle*/;
 int16_t lastPitchAngle;
 float pitchRadians;
-byte fcRX;
 unsigned long attitudeFrameCounter=0;
 
 
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);
-  //using the same UART for RXing from flight controller and TXing to HC-12:
-	Serial.begin(115200); //RX: GPIO3, TX: GPIO1
-  //Serial.swap(); //RX:Pin D7/GPIO13 TX:Pin D8/GPIO15
+  WiFi.forceSleepBegin();                  // turn off ESP8266 RF
+  delay(1);  
+  Serial.begin(115200); //OUTBOUND
+  flightController.begin(115200);
 
-/*
+  //pinMode(BUILTIN_LED, OUTPUT);
+  
+
+
 	Lidar.begin(0, true); // Set configuration to default and I2C to 400 kHz
-
-	Lidar.write(0x02, 0x0d);       //Maximum acquisition count of 0x0d. (default is 0x80) (limits effective range to about half of max)
-	Lidar.write(0x04, 0b00000100); //Use non-default reference acquisition count
+  Lidar.write(0x02, 0x0d);       //Maximum acquisition count of 0x0d. (default is 0x80) (limits effective range to about half of max)
+  Lidar.write(0x04, 0b00000100); //Use non-default reference acquisition count
 	Lidar.write(0x12, 0x03);       //Reference acquisition count of 3 (default is 5)
-*/
+
 	delay(500);
 
 	Serial.println("groundGuard online.");
@@ -43,8 +52,8 @@ void setup() {
 
 void loop() {
 
-  //distance = distanceFast(true); // Take a measurement with receiver bias correction and print to serial terminal
-  distance = 100; //testdata
+  distance = distanceFast(true); // Take a measurement with receiver bias correction and print to serial terminal
+  //distance = 100; //testdata
    // Take 99 measurements without receiver bias correction and print to serial terminal
   //for(int i = 0; i < 99; i++) Serial1.println(distanceFast(false));
   
@@ -54,11 +63,22 @@ void loop() {
   	pitchRadians = (float)pitchAngle*pi/180;
   	float height = distance*cos(pitchRadians);
   	
-  	if(Serial.availableForWrite()>=packetLength) Serial.print(height);  //Transmit if there is room in the serial TX buffer  	
+  	if(Serial.availableForWrite()>=packetLength*3)
+    {
+     Serial.println();
+     Serial.print("_____FRAME#"); Serial.print(attitudeFrameCounter); Serial.println("_____");
+     Serial.print("distance: ");     Serial.println(distance);
+     Serial.print("pAngle: ");   Serial.println(pitchAngle);
+     Serial.print("pRad: "); Serial.println(pitchRadians);
+     Serial.print("height: ");       Serial.println(height);  //Transmit if there is room in the serial TX buffer  	
+    }
+
+    lastPitchAngle=pitchAngle;
+    lastDistance=distance;
   }
 
 
-if(Serial.available()){
+if(flightController.available()){
 	//3 byte fifo buffer:
 	fifo0 = fifo1;
 	fifo1 = fifo2;
@@ -66,7 +86,7 @@ if(Serial.available()){
 
 	if(fifo0=='$' && fifo1=='T' && fifo2=='A') {//the next 6 rx bytes are the attitude frame
 
-  digitalWrite(BUILTIN_LED, !digitalRead(BUILTIN_LED));
+  //if(!attitudeFrameCounter%1000) digitalWrite(BUILTIN_LED, !digitalRead(BUILTIN_LED));
 
 	//0,1: Pitch
 	//2,3: Roll
@@ -75,9 +95,9 @@ if(Serial.available()){
 	//recieve and 'decode' the first 2 bytes only, into the pitch uint16_t with little endianness:
 		for(int i = 0; i<2 ;i++) {
 
-			while(!Serial.available()); //wait for byte
+			while(!flightController.available()); //wait for byte
 
-			fcRX=Serial.read();
+			fcRX=flightController.read();
 
 			switch (i) {
 		    	case 0: //first pitch byte (binary: xxxx xxxx)
