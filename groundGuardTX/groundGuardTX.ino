@@ -1,10 +1,5 @@
 //groundGuardTX.ino - By Mark Moore - October 2016
-<<<<<<< HEAD
-=======
-#include "ESP8266WiFi.h" //ironically, this is included to allow for disabling wifi..
 
->>>>>>> master
-#define packetLength 16
 const float pi = 3.14159265F;
 
 int printdelay = 50;
@@ -15,14 +10,12 @@ int printdelay = 50;
 #include <SoftwareSerial.h>
 
 int distance=0;
-int lastDistance=0;
 LIDARLite Lidar;  
 
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM303_U.h>
 #include <Adafruit_Simple_AHRS.h>
 
-<<<<<<< HEAD
 // Create sensor instances.
 Adafruit_LSM303_Accel_Unified accel(30301);
 Adafruit_LSM303_Mag_Unified   mag(30302);
@@ -42,35 +35,6 @@ void setup() {
   Lidar.begin(0, true); // Set configuration to default and I2C to 400 kHz
 	Lidar.write(0x02, 0x0d);       //Maximum acquisition count of 0x0d. (default is 0x80) (limits effective range to about half of max)
 	Lidar.write(0x04, 0b00000100); //Use non-default reference acquisition count
-=======
-//FC:
-byte fifo0=0, fifo1=0, fifo2=0;
-const byte rxPin = D5;
-const byte txPin = D0; //not used..
-SoftwareSerial flightController (rxPin, txPin);
-byte fcRX;
-
-
-int16_t pitchAngle/*, rollAngle, headingAngle*/;
-int16_t lastPitchAngle;
-float pitchRadians;
-unsigned long attitudeFrameCounter=0;
-
-
-void setup() {
-  WiFi.forceSleepBegin();                  // turn off ESP8266 RF
-  delay(1);  
-  Serial.begin(115200); //OUTBOUND
-  flightController.begin(115200);
-
-  //pinMode(BUILTIN_LED, OUTPUT);
-  
-
-
-	Lidar.begin(0, true); // Set configuration to default and I2C to 400 kHz
-  Lidar.write(0x02, 0x0d);       //Maximum acquisition count of 0x0d. (default is 0x80) (limits effective range to about half of max)
-  Lidar.write(0x04, 0b00000100); //Use non-default reference acquisition count
->>>>>>> master
 	Lidar.write(0x12, 0x03);       //Reference acquisition count of 3 (default is 5)
   delay(500);
   Serial.println("Lidar initialized.");
@@ -87,38 +51,9 @@ void setup() {
 void loop() {
   
   delay(10);
-
-<<<<<<< HEAD
-  //Serial.println();
   
   sensors_vec_t   orientation;  
-=======
-  distance = distanceFast(true); // Take a measurement with receiver bias correction and print to serial terminal
-  //distance = 100; //testdata
-   // Take 99 measurements without receiver bias correction and print to serial terminal
-  //for(int i = 0; i < 99; i++) Serial1.println(distanceFast(false));
-  
-  //recalculate height if either pitchAngle or distance measurement has changed:
-  if(pitchAngle!=lastPitchAngle || distance!=lastDistance) {
-  	
-  	pitchRadians = (float)pitchAngle*pi/180;
-  	float height = distance*cos(pitchRadians);
-  	
-  	if(Serial.availableForWrite()>=packetLength*3)
-    {
-     Serial.println();
-     Serial.print("_____FRAME#"); Serial.print(attitudeFrameCounter); Serial.println("_____");
-     Serial.print("distance: ");     Serial.println(distance);
-     Serial.print("pAngle: ");   Serial.println(pitchAngle);
-     Serial.print("pRad: "); Serial.println(pitchRadians);
-     Serial.print("height: ");       Serial.println(height);  //Transmit if there is room in the serial TX buffer  	
-    }
-
-    lastPitchAngle=pitchAngle;
-    lastDistance=distance;
-  }
->>>>>>> master
-
+ 
   if (ahrs.getOrientation(&orientation))
   {
     //distance = 100; //testdata
@@ -135,63 +70,6 @@ void loop() {
   	/*if(Serial1.availableForWrite()>=packetLength) {*/ Serial1.println(height); // }  //Transmit if there is room in the serial TX buffer  	
     
   }
-
-<<<<<<< HEAD
-=======
-if(flightController.available()){
-	//3 byte fifo buffer:
-	fifo0 = fifo1;
-	fifo1 = fifo2;
-	fifo2 = Serial.read();
-
-	if(fifo0=='$' && fifo1=='T' && fifo2=='A') {//the next 6 rx bytes are the attitude frame
-
-  //if(!attitudeFrameCounter%1000) digitalWrite(BUILTIN_LED, !digitalRead(BUILTIN_LED));
-
-	//0,1: Pitch
-	//2,3: Roll
-	//4,5: Heading
-
-	//recieve and 'decode' the first 2 bytes only, into the pitch uint16_t with little endianness:
-		for(int i = 0; i<2 ;i++) {
-
-			while(!flightController.available()); //wait for byte
-
-			fcRX=flightController.read();
-
-			switch (i) {
-		    	case 0: //first pitch byte (binary: xxxx xxxx)
-		     		pitchAngle = fcRX; //pitch = 0000 0000 xxxx xxxx
-		     		break;
-
-		    	case 1:	//second pitch byte (binary: yyyy yyyy)
-		      		pitchAngle |= fcRX<<8; //pitch = yyyy yyyy xxxx xxxx 
-		      		break;
-/*
-			case 2:	//first roll byte (binary: zzzz zzzz)
-		      rollAngle = rx; //roll = 0000 0000 zzzz zzzz
-		      break;
-
-		    case 3:	//second roll byte (binary: ææææ ææææ)
-		      rollAngle |= rx<<8; //roll = ææææ ææææ zzzz zzzz
-		      break;
-
-		    case 4:	//first heading byte (binary: øøøø øøøø)
-		      headingAngle = rx; //heading = 0000 0000 øøøø øøøø
-		      break;
-
-		    case 5: //second heading byte (binary: åååå åååå)
-		      headingAngle |= rx<<8; //heading = åååå åååå øøøø øøøø
-		      break;
-*/
-		    default: //shouldn't happen...
-		      break;
-				}
-			}	
-		attitudeFrameCounter++;
-		}
-	}
->>>>>>> master
 }
 
 // Read distance. The approach is to poll the status register until the device goes
