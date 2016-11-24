@@ -14,12 +14,18 @@ void setup()
 }
 
 float height=100;
+bool buzz=false;
 
 void loop()
 {
 	height = Serial1.parseFloat();
 	Serial.println(height);
 
-	if(height<10) digitalWrite(vibratorPin, HIGH);
-	else digitalWrite(vibratorPin, LOW);
+	if(height<50) buzz=true;
+	else buzz=false;
+
+	if(height==0) buzz=false; //special case: data timeout.
+	
+	digitalWrite(vibratorPin, buzz);
+
 }

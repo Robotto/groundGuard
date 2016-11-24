@@ -7,7 +7,6 @@ int printdelay = 50;
 //lidar:
 #include <Wire.h>
 #include <LIDARLite.h>
-#include <SoftwareSerial.h>
 
 int distance=0;
 LIDARLite Lidar;  
@@ -56,16 +55,17 @@ void loop() {
  
   if (ahrs.getOrientation(&orientation))
   {
+    if(orientation.roll>80 || orientation.roll<0) return; //acceptable values are between 0 and 80 degrees.
     //distance = 100; //testdata
     distance = distanceFast(true); //pull a distance measurement
    
     pitchRad = (float)orientation.roll*(pi/180);
     height = (float)distance*(float)cos(pitchRad);
     
-    /*
-    Serial.print("pitch : "); Serial.println(-1*orientation.roll); //drone pitch is orientation.roll because the 9dof board is sideways.
-    Serial.print("LIDAR : "); Serial.println(distance);   
-    Serial.print("Height: "); Serial.println(height);*/
+    
+    /*Serial.print("pitch : "); Serial.println(orientation.roll); //drone pitch is orientation.roll because the 9dof board is sideways.
+    Serial.print("LIDAR : "); Serial.println(distance);*/ 
+    Serial.print("Height: "); Serial.println(height);
 
   	/*if(Serial1.availableForWrite()>=packetLength) {*/ Serial1.println(height); // }  //Transmit if there is room in the serial TX buffer  	
     
