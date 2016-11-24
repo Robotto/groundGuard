@@ -154,8 +154,8 @@ void MadgwickAHRSupdateIMU(float gx, float gy, float gz, float ax, float ay, flo
 float invSqrt(float x) {
 	float halfx = 0.5f * x;
 	float y = x;
-	long i = *(long*)&y;
-	i = 0x5f3759df - (i>>1);
+	long i = *(long*)&y;		// evil floating point bit level hacking
+	i = 0x5f3759df - (i>>1);	// what the fuck?
 	y = *(float*)&i;
 	y = y * (1.5f - (halfx * y * y));
 	return y;
