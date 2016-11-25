@@ -74,15 +74,17 @@ void loop() {
     time=millis(); //update time
     pitchGyroRad+=(float)event.gyro.x*dt; //rad/sec * sec;
 
-    //Get bulk ACC data to filter out noisy data:
-    int forceMagnitudeApprox = abs(event.acceleration.x) + abs(event.acceleration.y) + abs(event.acceleration.z);
+    //Get bulk ACC data to filter out noisy data: (unused)
+    //int forceMagnitudeApprox = abs(event.acceleration.x) + abs(event.acceleration.y) + abs(event.acceleration.z);
     //if(forceMagnitudeApprox>forceMagnitudeMAX || forceMagnitudeApprox<forceMagnitudeMIN) {Serial.print("forceMagnitudeApprox: "); Serial.println(forceMagnitudeApprox); return;}
 
-    // Turning around the X axis results in a vector on the Y-axis
+    // Turning around the X axis results in a vector on the Y-axis .. i think...
     pitchAccRad = atan2f((float)event.acceleration.y, (float)event.acceleration.z);
 
-    pitchMasterRad = (pitchMasterRad+(float)event.gyro.x*dt) * 0.98 + pitchAccRad * 0.02;
+    //filter:
+    pitchMasterRad = (pitchMasterRad+(float)event.gyro.x*dt) * 0.98 + pitchAccRad * 0.02; 
     
+    //rad -> deg
     float pitchMasterDeg = pitchMasterRad*(180/pi);//acceptable values are between 0 and 85 degrees.
     if(pitchMasterDeg>85 || pitchMasterDeg<0) { Serial.print("Pitch out of range: "); Serial.println(pitchMasterDeg); return;} 
     
