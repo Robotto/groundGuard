@@ -1,0 +1,1 @@
+Subversion of the groundguardTX using accelerometer to keep gyro drift at bay, as described [here](http://www.pieter-jan.com/node/11)
