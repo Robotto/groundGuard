@@ -26,11 +26,9 @@ LIDARLite Lidar;
 Adafruit_L3GD20_Unified gyro = Adafruit_L3GD20_Unified(20);
 Adafruit_LSM303_Accel_Unified accel = Adafruit_LSM303_Accel_Unified(54321);
 
-float pitchAcc;  //based on accelerometer data
-float pitchGyro; //based on gyroscope data
-
-float pitchRad; //combined using 98% gyro and 2% acc 
-float pitchDeg; //the above in degrees
+float pitchAccRad;  //based on accelerometer data
+float pitchGyroRad; //based on gyroscope data
+float pitchMasterRad; //combined using 98% gyro and 2% acc 
 
 float height;   //calculated from pitch and lidar distance using cosine relation
 unsigned long time=0;
@@ -66,47 +64,50 @@ void loop() {
   
   sensors_event_t event; 
   
-  accel.getEvent(&event); //update accelerometer data
   
   if(gyro.getEvent(&event))
   {
+  	accel.getEvent(&event); //update accelerometer data
 
     //Convert from rad/sec to rad:
     float dt = ((float)millis()-(float)time)/1000; //time elapsed since last measurement
     time=millis(); //update time
-    pitchRad+=(float)event.gyro.x*dt; //rad/sec * sec;
+    pitchGyroRad+=(float)event.gyro.x*dt; //rad/sec * sec;
 
     //Get bulk ACC data to filter out noisy data:
     int forceMagnitudeApprox = abs(event.acceleration.x) + abs(event.acceleration.y) + abs(event.acceleration.z);
     //if(forceMagnitudeApprox>forceMagnitudeMAX || forceMagnitudeApprox<forceMagnitudeMIN) {Serial.print("forceMagnitudeApprox: "); Serial.println(forceMagnitudeApprox); return;}
 
     // Turning around the X axis results in a vector on the Y-axis
-    pitchAcc = atan2f((float)event.acceleration.y, (float)event.acceleration.z);
-    pitchRad = pitchRad * 0.98 + pitchAcc * 0.02;
+    pitchAccRad = atan2f((float)event.acceleration.y, (float)event.acceleration.z);
 
+    pitchMasterRad = (pitchMasterRad+(float)event.gyro.x*dt) * 0.98 + pitchAccRad * 0.02;
     
-    pitchDeg = (float)pitchRad*(180/pi);
-    
-    if(pitchDeg>85 || pitchDeg<0) return; //acceptable values are between 0 and 80 degrees.
+    float pitchMasterDeg = pitchMasterRad*(180/pi);//acceptable values are between 0 and 85 degrees.
+    if(pitchMasterDeg>85 || pitchMasterDeg<0) { Serial.print("Pitch out of range: "); Serial.println(pitchMasterDeg); return;} 
     
    	//Do a lidar measurement and calculate height:
-    distance = distanceFast(true); //pull a distance measurement
-    height = (float)distance*(float)cos(pitchRad);
+    distance = distanceFast(false); //pull a distance measurement
+    height = (float)distance*(float)cos(pitchMasterRad);
     
     //DEBUG PRINTOUT:
-    Serial.println();
-    Serial.print("forceMagnitudeApprox: "); Serial.println(forceMagnitudeApprox);
-    Serial.print("rawAcc : x: "); Serial.print(event.acceleration.x); Serial.print(" y: "); Serial.print(event.acceleration.y); Serial.print(" z: "); Serial.println(event.acceleration.z);
-    Serial.print("pitchAcc : "); Serial.println(pitchAcc); //drone pitch is orientation.roll because the 9dof board is sideways
-   
-    Serial.print("dt : "); Serial.println(dt); //drone pitch is orientation.roll because the 9dof board is sideways.
-    Serial.print("rawGyro x: "); Serial.println(event.gyro.x); //drone pitch is orientation.roll because the 9dof board is sideways.
-    Serial.print("pitchRad : "); Serial.println(pitchRad); //drone pitch is orientation.roll because the 9dof board is sideways.
-    Serial.print("pitchDeg : "); Serial.println(pitchDeg); //drone pitch is orientation.roll because the 9dof board is sideways.
-    Serial.println();
-    Serial.print("LIDAR : "); Serial.println(distance); 
-    Serial.print("Height: "); Serial.println(height);
+    //Serial.println();
+    //Serial.print("forceMagnitudeApprox: "); Serial.println(forceMagnitudeApprox);
+    //Serial.print("rawAcc : x: "); Serial.print(event.acceleration.x); Serial.print(" y: "); Serial.print(event.acceleration.y); Serial.print(" z: "); Serial.println(event.acceleration.z);
+    //Serial.print("pitchAccRad : "); Serial.println(pitchAccRad); //drone pitch is orientation.roll because the 9dof board is sideways
+   	//	Serial.print("pitchAccDeg : "); Serial.println(pitchAccRad*(180/pi));
+    
+    //Serial.print("dt : "); Serial.println(dt); 
+    //Serial.print("rawGyro x: "); Serial.print(event.gyro.x); Serial.println("rad/s");
+    //Serial.print("pitchGyroRad : "); Serial.println(pitchGyroRad); 
+    //	Serial.print("pitchGyroDeg : "); Serial.println(pitchGyroRad*(180/pi));
 
+    //Serial.print("pitchMasterRad : "); Serial.println(pitchMasterRad); //drone pitch is orientation.roll because the 9dof board is sideways.
+    
+    //	Serial.print("Pitch : "); Serial.println(pitchMasterDeg); //drone pitch is orientation.roll because the 9dof board is sideways.
+    //	Serial.print("LIDAR : "); Serial.println(distance); 
+    	Serial.print("Height: "); Serial.println(height);
+	
     //Report wirelessly via HC-12 on Serial1:
   	if(Serial1.availableForWrite()>=packetLength) Serial1.println(height); //  //Transmit if there is room in the serial TX buffer  	
     
