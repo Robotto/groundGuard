@@ -7,19 +7,21 @@ void setup()
 	Serial.begin(115200);
 	Serial1.begin(115200);
 
-	Serial1.setTimeout(5000); //ms
+	//Serial1.setTimeout(5000); //ms
 
 	pinMode(vibratorPin,OUTPUT);
 
 }
 
-float height=100;
+int height=100;
 bool buzz=false;
 
 void loop()
 {
-	height = Serial1.parseFloat();
-	Serial.println(height);
+	if(Serial1.available()){
+		height = (int)Serial1.read();
+		Serial.println(height);
+	}
 
 	if(height<50) buzz=true;
 	else buzz=false;

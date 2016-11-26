@@ -65,9 +65,8 @@ void loop() {
     
     /*Serial.print("pitch : "); Serial.println(orientation.roll); //drone pitch is orientation.roll because the 9dof board is sideways.
     Serial.print("LIDAR : "); Serial.println(distance);*/ 
-    Serial.print("Height: "); Serial.println(height);
-
-  	/*if(Serial1.availableForWrite()>=packetLength) {*/ Serial1.println(height); // }  //Transmit if there is room in the serial TX buffer  	
+    Serial.print("Height: "); Serial.println((uint8_t)height);
+  	/*if(Serial1.availableForWrite()>=packetLength) {*/ Serial1.write((uint8_t)height); // }  //Transmit if there is room in the serial TX buffer  	
     
   }
 }

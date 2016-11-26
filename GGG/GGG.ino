@@ -86,7 +86,7 @@ void loop() {
     
     //rad -> deg
     float pitchMasterDeg = pitchMasterRad*(180/pi);//acceptable values are between 0 and 85 degrees.
-    if(pitchMasterDeg>85 || pitchMasterDeg<0) { Serial.print("Pitch out of range: "); Serial.println(pitchMasterDeg); return;} 
+    if(pitchMasterDeg>85 || pitchMasterDeg<0) { /*Serial.print("Pitch out of range: "); Serial.println(pitchMasterDeg);*/ return;} 
     
    	//Do a lidar measurement and calculate height:
     distance = distanceFast(false); //pull a distance measurement
@@ -108,10 +108,15 @@ void loop() {
     
     //	Serial.print("Pitch : "); Serial.println(pitchMasterDeg); //drone pitch is orientation.roll because the 9dof board is sideways.
     //	Serial.print("LIDAR : "); Serial.println(distance); 
-    	Serial.print("Height: "); Serial.println(height);
+    	Serial.print("Height float: ");
+    		Serial.println(height);
+
+    	Serial.print("Height uint8_t: "); 
+    		Serial.println((uint8_t)height);
 	
+    if((uint8_t)height>255) return;
     //Report wirelessly via HC-12 on Serial1:
-  	if(Serial1.availableForWrite()>=packetLength) Serial1.println(height); //  //Transmit if there is room in the serial TX buffer  	
+  	/*if(Serial1.availableForWrite()>=packetLength)*/ Serial1.write((uint8_t)height); //  //Transmit if there is room in the serial TX buffer  	
     
   }
 }

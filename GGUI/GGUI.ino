@@ -21,8 +21,8 @@ int clickCount=0;
 //Groundguard:
 const unsigned int vibratorPin = 10;
 bool buzz=false;
-int triggerHeight=64;
-int height=64;
+uint8_t triggerHeight=64;
+uint8_t height=64;
 
 void setup(){
 	oledInit();
@@ -49,7 +49,7 @@ void loop(){
 
 if(Serial.available()) 
 {
-height=Serial.parseInt();
+height=(uint8_t)Serial.read();
 refreshRXHeight();
 }
 
