@@ -53,11 +53,12 @@ void setup(){
 
 void loop(){
 
+	delay(1);
 	sensors_event_t event; 
   
-  	accel.getEvent(&event); //update accelerometer data
   
   	if(gyro.getEvent(&event)) //update gyro data
+  	accel.getEvent(&event); //update accelerometer data
 	{
 	float dt = ((float)millis()-(float)time)/1000; //time elapsed since last measurement
     time=millis(); //update time
