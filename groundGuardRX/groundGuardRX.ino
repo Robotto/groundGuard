@@ -18,12 +18,25 @@ static unsigned encA=7, encB=8, encBTN=4;
 Encoder myEnc(encA, encB);
 int clickCount=0;
 
+
 //Groundguard:
+
+//States enum:
+enum states { //default state should be "get_data"
+	min,
+	max,
+	insideRange,
+	outsideRange
+};
+
+states state; //init the enum with the pass states.
+
 const unsigned int vibratorPin = 10;
-bool maxMin=true; //MAX = true,  MIN= false
 bool buzz=false;
-uint8_t triggerHeight=50;
-uint8_t height=0;
+
+uint8_t maxHeight;
+uint8_t minHeight;
+uint8_t rx_height=0;
 
 void setup(){
 	oledInit();
@@ -48,51 +61,102 @@ void setup(){
 
 void loop(){
 
-if(Serial1.available()) 
-{
-height=(uint8_t)Serial1.read();
-//refreshRXHeight();
+if(Serial1.available()) rx_height=(uint8_t)Serial1.read();
+
+switch (state) {
+    case min:
+	  if(rx_height<minHeight) buzz=true;
+	  else buzz=false;
+      break;
+    case max:
+      if(rx_height>maxHeight) buzz=true;
+      else buzz=false;
+      break;
+    case insideRange:
+	  if(rx_height>minHeight && rx_height<maxHeight) buzz=true;
+      else buzz=false;
+      break;
+    case outsideRange:
+	  if(rx_height<minHeight || rx_height>maxHeight) buzz=true;
+      else buzz=false;
+      break; 
+    
+    default:
+	  buzz=false;
+	  break;
 }
 
-if(!maxMin && height<triggerHeight) buzz=true;
-else if (maxMin && height>triggerHeight) buzz=true;
-else buzz=false;
-if(height==0) buzz=false; //special case: data timeout.
-
+if(rx_height==0) buzz=false;     //special case: data timeout.
 digitalWrite(vibratorPin, buzz);
-
-/*
-if(buzz) { digitalWrite(blueLED, LOW); OLEDalarm(); }
-else { display.invertDisplay(false); digitalWrite(blueLED, HIGH); digitalWrite(orangeLed,LOW); digitalWrite(purpleLED, LOW); }
-*/
 
 int delta=readEncoder();
 
 if(digitalRead(encBTN)) { 
-	clickCount++;
-	//if 		(triggerHeight==0) 	triggerHeight=64; 
-	//else if (triggerHeight==64) triggerHeight=128;
-	//else 						triggerHeight=0;
-	maxMin=!maxMin;
+	
+	switch (state) {
+    case min:
+	  state=max;
+      break;
+
+    case max:
+      state=insideRange;
+      break;
+
+    case insideRange:
+	  state=outsideRange;
+      break; 
+
+    case outsideRange:
+	  state=min;
+      break; 
+
+    default:
+      state=min;
+      break;
+}
+	
 	display.clearDisplay();
+
 	drawUIframe();
-	//refreshRXHeight();
+
 	refreshTriggerHeight();
+
 	delay(30); //debounce
 	while(digitalRead(encBTN));
 	delay(20); //debounce
-	if(clickCount>10) easteregg(true);
-}
+	}
 
 
 if(delta)
     {
-    	//if(clickCount>10)  easteregg(false); //clean up after easter egg.
- 		clickCount=0;
-    	triggerHeight-=delta;
-    	if(triggerHeight<0) triggerHeight=0;
-    	else if(triggerHeight>255) triggerHeight=255;
+    	
+	switch (state) {
+	    case min:
+	    	minHeight-=delta;	
+	    	//if(minHeight<0) minHeight=255;      //uint8_t should wrap automagically
+    		//else if(minHeight>255) minHeight=0;
+    		if(minHeight>maxHeight) maxHeight=minHeight; //push values up
+      		break;
+    	case max:
+	    	maxHeight-=delta;	
+	    	//if(maxHeight<0) maxHeight=255;
+    		//else if(maxHeight>255) maxHeight=0;
+    		if(maxHeight<minHeight) minHeight=maxHeight;  //push values down	
+      		break; 
+
+    	default:
+    		
+    		if(minHeight>0 && maxHeight<255) //if range allows movement within uin8t_scope
+    		{
+	    	minHeight-=delta;	
+	    	maxHeight-=delta;	
+    		}
+
+      		break;
+		}
+
     	refreshTriggerHeight();
+
     	delta=0;
     }
 	
@@ -101,9 +165,7 @@ if(delta)
 void oledInit()
 {
 	display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
-
 	setContrast(&display, 255);  //contrast is a number between 0 and 255. Use a lower number for lower contrast
-
 	display.clearDisplay();
 	display.setTextSize(3);
 	display.setCursor(0,20);
@@ -111,110 +173,140 @@ void oledInit()
 	display.print("OMGWTF!");
 	display.display();
 	delay(200);
-	//crazy_draw();
 	display.clearDisplay();
 	display.display();
 
 	drawUIframe();
-
-	
-
 }
 
 void drawUIframe()
 {
 	display.setTextColor(WHITE);
-	
-	display.setTextSize(2);
-	display.setCursor(0,36);
-	if(maxMin) display.print("Max: ");
-	else display.print("Min: ");
-	//refreshRXHeight();
-	refreshTriggerHeight();
-	
-	/*
-	display.setTextSize(1);
-	display.setCursor(0,0);
-	display.print("RX: ");
-*/
+
+		switch (state) {
+    case min:
+	  display.setTextSize(2);
+	  display.setCursor(0,36);
+	  display.print("Min: ");
+	  refreshTriggerHeight();
+      break;
+    case max:
+      display.setTextSize(2);
+	  display.setCursor(0,36);
+	  display.print("Max: ");
+	  refreshTriggerHeight();
+      break;
+    //case range:
+    default:
+	  display.setTextSize(1);
+	  display.setCursor(0,14);
+	  if(state==insideRange) display.print("Buzz inside range:");
+	  else display.print("Buzz outside range:");
+	  display.setTextSize(2);
+
+	  display.setCursor(0,28);
+	  display.print("Min: ");
+	  display.setCursor(0,44);
+	  display.print("Max: ");
+      break;
+}
+
 	display.display();
 }
 
-void easteregg(bool active)
-{
-	if(active){
-		display.clearDisplay();
-		display.setTextSize(3);
-		display.setCursor(0,20);
-		display.setTextColor(WHITE);
-		display.print(" STOP NU ");
-		display.display();
-		display.startscrolldiagright(0x00, 0x0F);
-		}
-	else{
-		display.stopscroll(); 
-		display.clearDisplay(); 
-		drawUIframe();
-		}
-}
 
 void refreshTriggerHeight()
 {
-	display.fillRect(0,18,128,8,BLACK);
-	for(int j=0;j<triggerHeight;j++)
-	{
-	for(int i=0; i<8;i++)
-    {
-    display.drawPixel(j/2, i+18, WHITE);
-    }
-}
 
-	display.fillRect(0,56,128,8,BLACK); //clear under "RX"
-    display.fillRect(48,32,128,32,BLACK); //clear numbers
-	display.setTextSize(3);
-	display.setTextColor(WHITE);
-	display.setCursor(48,36);
-	display.print(triggerHeight);
-	display.setTextSize(2);
-
-	display.print("cm");
-	display.display();
-}
-
-void refreshRXHeight()
-{
-	display.fillRect(0,10,128,8,BLACK); //clear bar
-	for(int j=128;j>=height;j--)
-	{
-	for(int i=0; i<4;i++)
-    {
-    	display.drawPixel(j, i+10, WHITE);
-    	}
-    }
+	//display.fillRect(0,60,128,8,BLACK); //clear bottom of screen.
+    display.fillRect(48,28,128,32,BLACK); //clear numbers
 	
-
-	display.fillRect(87,0,128,8,BLACK);
-	display.setTextSize(1);
 	display.setTextColor(WHITE);
-	display.setCursor(90,0);
-	display.print(height);
-	display.print(" cm");
+
+
+		switch (state) {
+    case min:
+
+    	display.fillRect(0,0,128,8,BLACK);
+		for(int j=0;j<minHeight;j++){
+			for(int i=0; i<8;i++) display.drawPixel(j/2, i, WHITE);
+			}
+	  	display.setCursor(48,36);
+		display.setTextSize(3);	
+		display.print(minHeight);
+		display.setTextSize(2);	
+		display.print("cm");
+	  	break;
+
+    case max:
+
+    	display.fillRect(0,0,128,8,BLACK);
+		for(int j=255;j>maxHeight;j--){
+			for(int i=0; i<8;i++) display.drawPixel(j/2, i, WHITE);
+			}
+
+      	display.setCursor(48,36);
+		display.setTextSize(3);	
+		display.print(maxHeight);
+		display.setTextSize(2);	
+		display.print("cm");
+
+      	break;
+
+    case insideRange:
+
+        	display.fillRect(0,0,128,8,BLACK);
+        
+    	for(int j=minHeight;j<maxHeight;j++){
+			for(int i=0; i<8;i++) display.drawPixel(j/2, i, WHITE);
+			}		
+		
+		display.setTextSize(2);	
+
+      	display.setCursor(48,28);
+		display.print(minHeight);
+		display.print("cm");
+
+      	display.setCursor(48,44);
+		display.print(maxHeight);
+		display.print("cm");
+	  
+	  break; 
+
+    case outsideRange:
+
+         display.fillRect(0,0,128,8,BLACK);
+        //bottom:
+    	for(int j=0;j<minHeight;j++){
+			for(int i=0; i<8;i++) display.drawPixel(j/2, i, WHITE);
+			}		
+		//top:
+		for(int j=255;j>maxHeight;j--){
+			for(int i=0; i<8;i++) display.drawPixel(j/2, i, WHITE);
+			}
+
+		
+		display.setTextSize(2);	
+
+      	display.setCursor(48,28);
+		display.print(minHeight);
+		display.print("cm");
+
+      	display.setCursor(48,44);
+		display.print(maxHeight);
+		display.print("cm");
+	  
+	  break; 
+
+    default:
+      break;
+}
+
+
 	display.display();
-
 }
 
-void OLEDalarm()
-{	
-	static bool inverted;
-	static long invertTime;
-	if(millis()>invertTime+125){
-	display.invertDisplay(inverted);
-	digitalWrite(orangeLed, inverted);
-	digitalWrite(purpleLED, !inverted);
-	inverted=!inverted;
-	invertTime=millis();
-	}
-}
+
 
 void setContrast(Adafruit_SSD1306 *display, uint8_t contrast)
 {
@@ -239,28 +331,4 @@ int readEncoder()
   	if(change<-3) { returnVal=-1; change=0;}
   	if(change>3) { returnVal=1; change=0;} //divide ticks by four so the input matches the mechanical feedback
   	return returnVal;
-}
-
-void crazy_draw()
-{
-    for(int j=4; j<128; j+=2)
-    {
-    for(int i=0; i<8;i++)
-    {
-    display.drawPixel(j, i+8, WHITE);
-    display.drawPixel(j, i+48, WHITE);
-    //delay(1);
-  }
-    display.display();
-  }
-  for(int j=4; j<128; j+=2)
-    {
-    for(int i=0; i<8;i++)
-    {
-    display.drawPixel(j, i+8, BLACK);
-    display.drawPixel(j, i+48, BLACK);
-    //delay(1);
-  }
-    display.display();
-  }
 }
