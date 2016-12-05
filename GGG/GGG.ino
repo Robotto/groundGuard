@@ -108,11 +108,11 @@ void loop() {
     
     //	Serial.print("Pitch : "); Serial.println(pitchMasterDeg); //drone pitch is orientation.roll because the 9dof board is sideways.
     //	Serial.print("LIDAR : "); Serial.println(distance); 
-    	Serial.print("Height float: ");
-    		Serial.println(height);
+    //	Serial.print("Height float: ");
+    //		Serial.println(height);
 
-    	Serial.print("Height uint8_t: "); 
-    		Serial.println((uint8_t)height);
+    //	Serial.print("Height uint8_t: "); 
+    //		Serial.println((uint8_t)height);
 	
     if((uint8_t)height>255) return;
     //Report wirelessly via HC-12 on Serial1:
