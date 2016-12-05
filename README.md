@@ -26,9 +26,7 @@ The lidarLiteV3 distanceFast() function is from [here](https://github.com/garmin
 
 Uses Paul Stoffregens quadrature encoder library from [here](https://github.com/PaulStoffregen/Encoder)
 
-Uses the Adafruit SSD 1306 OLED library from [here](https://github.com/adafruit/Adafruit_SSD1306)
-
-Which requires the adafruit GFX library found [here](https://github.com/adafruit/Adafruit-GFX-Library)
+Uses the Adafruit SSD 1306 OLED library from [here](https://github.com/adafruit/Adafruit_SSD1306), which requires the adafruit GFX library found [here](https://github.com/adafruit/Adafruit-GFX-Library)
 
 ![RX](https://rawgit.com/Robotto/groundGuard/master/rx_hw.png "Reciever hardware")
 
