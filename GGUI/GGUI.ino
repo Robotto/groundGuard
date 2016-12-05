@@ -20,16 +20,17 @@ int clickCount=0;
 
 //Groundguard:
 const unsigned int vibratorPin = 10;
+bool maxMin=true; //MAX = true,  MIN= false
 bool buzz=false;
-uint8_t triggerHeight=64;
-uint8_t height=64;
+uint8_t triggerHeight=50;
+uint8_t height=0;
 
 void setup(){
 	oledInit();
 	
-	Serial.begin(115200);
+	//Serial.begin(115200);
 	Serial1.begin(115200);
-	Serial1.setTimeout(5000); //ms
+	//Serial1.setTimeout(5000); //ms
 	
 	pinMode(vibratorPin,OUTPUT);
 	pinMode(purpleLED, OUTPUT);
@@ -47,41 +48,50 @@ void setup(){
 
 void loop(){
 
-if(Serial.available()) 
+if(Serial1.available()) 
 {
-height=(uint8_t)Serial.read();
-refreshRXHeight();
+height=(uint8_t)Serial1.read();
+//refreshRXHeight();
 }
 
-if(height<triggerHeight) buzz=true;
+if(!maxMin && height<triggerHeight) buzz=true;
+else if (maxMin && height>triggerHeight) buzz=true;
 else buzz=false;
 if(height==0) buzz=false; //special case: data timeout.
 
 digitalWrite(vibratorPin, buzz);
 
+/*
 if(buzz) { digitalWrite(blueLED, LOW); OLEDalarm(); }
 else { display.invertDisplay(false); digitalWrite(blueLED, HIGH); digitalWrite(orangeLed,LOW); digitalWrite(purpleLED, LOW); }
+*/
 
 int delta=readEncoder();
 
 if(digitalRead(encBTN)) { 
 	clickCount++;
-	if 		(triggerHeight==0) 	triggerHeight=64; 
-	else if (triggerHeight==64) triggerHeight=128;
-	else 						triggerHeight=0;
+	//if 		(triggerHeight==0) 	triggerHeight=64; 
+	//else if (triggerHeight==64) triggerHeight=128;
+	//else 						triggerHeight=0;
+	maxMin=!maxMin;
+	display.clearDisplay();
+	drawUIframe();
+	//refreshRXHeight();
 	refreshTriggerHeight();
-	delay(50); //debounce
+	delay(30); //debounce
 	while(digitalRead(encBTN));
+	delay(20); //debounce
 	if(clickCount>10) easteregg(true);
 }
 
 
 if(delta)
     {
-    	if(clickCount>10)  easteregg(false); //clean up after easter egg.
+    	//if(clickCount>10)  easteregg(false); //clean up after easter egg.
  		clickCount=0;
     	triggerHeight-=delta;
     	if(triggerHeight<0) triggerHeight=0;
+    	else if(triggerHeight>255) triggerHeight=255;
     	refreshTriggerHeight();
     	delta=0;
     }
@@ -100,6 +110,7 @@ void oledInit()
 	display.setTextColor(WHITE);
 	display.print("OMGWTF!");
 	display.display();
+	delay(200);
 	//crazy_draw();
 	display.clearDisplay();
 	display.display();
@@ -115,15 +126,17 @@ void drawUIframe()
 	display.setTextColor(WHITE);
 	
 	display.setTextSize(2);
-	display.setCursor(0,40);
-	display.print("RX: ");
-	refreshRXHeight();
+	display.setCursor(0,36);
+	if(maxMin) display.print("Max: ");
+	else display.print("Min: ");
+	//refreshRXHeight();
+	refreshTriggerHeight();
 	
+	/*
 	display.setTextSize(1);
 	display.setCursor(0,0);
-	display.print("Trigger height: ");
-	refreshTriggerHeight();
-
+	display.print("RX: ");
+*/
 	display.display();
 }
 
@@ -147,46 +160,46 @@ void easteregg(bool active)
 
 void refreshTriggerHeight()
 {
-	display.fillRect(0,10,128,6,BLACK);
+	display.fillRect(0,18,128,8,BLACK);
 	for(int j=0;j<triggerHeight;j++)
 	{
-	for(int i=0; i<6;i++)
+	for(int i=0; i<8;i++)
     {
-    display.drawPixel(j, i+10, WHITE);
+    display.drawPixel(j/2, i+18, WHITE);
     }
 }
 
-	display.fillRect(87,0,128,8,BLACK);
-	display.setTextSize(1);
+	display.fillRect(0,56,128,8,BLACK); //clear under "RX"
+    display.fillRect(48,32,128,32,BLACK); //clear numbers
+	display.setTextSize(3);
 	display.setTextColor(WHITE);
-	display.setCursor(90,0);
+	display.setCursor(48,36);
 	display.print(triggerHeight);
-	display.print(" cm");
+	display.setTextSize(2);
+
+	display.print("cm");
 	display.display();
 }
 
 void refreshRXHeight()
 {
-	display.fillRect(0,18,128,8,BLACK); //clear bar
+	display.fillRect(0,10,128,8,BLACK); //clear bar
 	for(int j=128;j>=height;j--)
 	{
-	for(int i=0; i<8;i++)
+	for(int i=0; i<4;i++)
     {
-    	display.drawPixel(j, i+18, WHITE);
+    	display.drawPixel(j, i+10, WHITE);
     	}
     }
 	
-	display.fillRect(0,56,128,8,BLACK); //clear under "RX"
-    display.fillRect(36,32,128,32,BLACK); //clear numbers
-	display.setTextSize(3);
-	display.setTextColor(WHITE);
-	display.setCursor(36,36);
-	display.print(height);
-	display.setTextSize(2);
 
+	display.fillRect(87,0,128,8,BLACK);
+	display.setTextSize(1);
+	display.setTextColor(WHITE);
+	display.setCursor(90,0);
+	display.print(height);
 	display.print(" cm");
 	display.display();
-
 
 }
 
