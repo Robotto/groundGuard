@@ -34,8 +34,8 @@ states state; //init the enum with the pass states.
 const unsigned int vibratorPin = 10;
 bool buzz=false;
 
-uint8_t maxHeight;
-uint8_t minHeight;
+uint8_t maxHeight=50;
+uint8_t minHeight=20;
 uint8_t rx_height=0;
 
 void setup(){
@@ -185,13 +185,19 @@ void drawUIframe()
 
 		switch (state) {
     case min:
+	  display.setTextSize(1);
+	  display.setCursor(0,14);
+	  display.print("Buzz below minimum:");
 	  display.setTextSize(2);
 	  display.setCursor(0,36);
 	  display.print("Min: ");
 	  refreshTriggerHeight();
       break;
     case max:
-      display.setTextSize(2);
+	  display.setTextSize(1);
+	  display.setCursor(0,14);
+	  display.print("Buzz above maximum:");
+	  display.setTextSize(2);
 	  display.setCursor(0,36);
 	  display.print("Max: ");
 	  refreshTriggerHeight();
