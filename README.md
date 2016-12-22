@@ -30,6 +30,7 @@ Uses the Adafruit SSD 1306 OLED library from [here](https://github.com/adafruit/
 
 ![RX](https://rawgit.com/Robotto/groundGuard/master/rx_hw.png "Reciever hardware")
 
-Both serial connections run at 115200 Baud, and the I2C connection with the lidarLite runs at 400Khz, so this should be pretty damn fast.
-Setup the HC-12 to FU1 and 115200 baud (AT+FU1, AT+B115200) by pulling the "SET" pin low and issuing AT commands.
+The I2C connection with the lidarLite runs at 400Khz, which yields individual filtered measurements at about 250Hz. Both serial connections run at 4800 Baud, so this should be pretty damn fast.
+
+Use the HC12 configurator sketch in the utility folder to setup the HC-12 to FU1 and 4800 baud (AT+FU1, AT+4800) (by pulling the "SET" pin low and issuing AT commands.)
 
